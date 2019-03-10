@@ -7,6 +7,11 @@ iOS = ['iphone', 'apple']
 nokia = ['nokia']
 blackberry = ['blackberry']
 
+mobile_features = ['Memory RAM', 'Network Connections', 'Storage Capacity', 'Color Family', 'Phone Model', 'Camera',
+                   'Phone Screen Size']
+beauty_features = ['Benefits', 'Brand', 'Colour_group', 'Product_texture', 'Skin_type']
+fashion_features = ['Pattern', 'Collar Type', 'Fashion Trend', 'Clothing Material', 'Sleeves']
+
 
 def get_features(data):
     features = data.drop(columns=['itemid', 'title', 'image_path'])
@@ -49,67 +54,67 @@ def create_mobile_df(mobile_profile, predictions, features):
                     prediction1 = mobile_profile['Brand']['apple']
                 prediction2 = random.randrange(len(mobile_profile['Brand']))
 
-            if feature == 'Memory RAM':
-                for mem in mobile_profile['Memory RAM']:
-                    if mem in title:
-                        prediction1 = mobile_profile['Memory RAM'][mem]
-                        break
-
-            if feature == 'Network Connections':
-                for net_con in mobile_profile['Network Connections']:
-                    if net_con in title:
-                        prediction1 = mobile_profile['Network Connections'][net_con]
-                        break
-
-            if feature == 'Storage Capacity':
-                for keyword in mobile_profile['Storage Capacity']:
-                    if keyword in title:
-                        prediction1 = mobile_profile['Storage Capacity'][keyword]
-                        break
-
-            if feature == 'Color Family':
-                for keyword in mobile_profile['Color Family']:
-                    if keyword in title:
-                        prediction1 = mobile_profile['Color Family'][keyword]
-                        break
-
-            if feature == 'Phone Model':
-                for keyword in mobile_profile['Phone Model']:
-                    if keyword in title:
-                        prediction1 = mobile_profile['Phone Model'][keyword]
-                        break
-
-            if feature == 'Camera':
-                for keyword in mobile_profile['Camera']:
-                    if keyword in title:
-                        prediction1 = mobile_profile['Camera'][keyword]
-                        break
-
-            if feature == 'Phone Screen Size':
-                for keyword in mobile_profile['Phone Screen Size']:
-                    if keyword in title:
-                        prediction1 = mobile_profile['Phone Screen Size'][keyword]
-                        break
+            for mobile_feature in mobile_features:
+                if feature == mobile_feature:
+                    for keyword in mobile_profile[mobile_feature]:
+                        if keyword in title:
+                            prediction1 = mobile_profile[mobile_feature][keyword]
+                            break
 
             row = [id_label, str(prediction1) + ' ' + str(prediction2)]
             rows.append(row)
 
-    submission_df = pd.DataFrame(rows, columns=columns)
-    return submission_df
+    return pd.DataFrame(rows, columns=columns)
 
 
-def create_submission_df(predictions, features):
+def create_fashion_submission_df(profile, predictions, features):
     columns = ['id', 'tagging']
     rows = []
 
     for index, data in predictions.iterrows():
         for feature in features:
             id_label = str(data['itemid']) + "_" + feature
-            row = [id_label, data[feature][1] + " " + data[feature][4]]
+            title = str(data['title'])
+
+            prediction1 = data[feature][1]
+            prediction2 = data[feature][4]
+
+            for fashion_feature in fashion_features:
+                if feature == fashion_feature:
+                    for keyword in profile[fashion_feature]:
+                        if keyword in title:
+                            prediction1 = profile[fashion_feature][keyword]
+                            break
+
+            row = [id_label, str(prediction1) + ' ' + str(prediction2)]
             rows.append(row)
 
-    submission_df = pd.DataFrame(rows, columns=columns)
-    return submission_df
+    return pd.DataFrame(rows, columns=columns)
+
+
+def create_beauty_submission_df(profile, predictions, features):
+    columns = ['id', 'tagging']
+    rows = []
+
+    for index, data in predictions.iterrows():
+        for feature in features:
+            id_label = str(data['itemid']) + "_" + feature
+            title = str(data['title'])
+
+            prediction1 = data[feature][1]
+            prediction2 = data[feature][4]
+
+            for beauty_feature in beauty_features:
+                if feature == beauty_feature:
+                    for keyword in profile[beauty_feature]:
+                        if keyword in title:
+                            prediction1 = profile[beauty_feature][keyword]
+                            break
+
+            row = [id_label, str(prediction1) + ' ' + str(prediction2)]
+            rows.append(row)
+
+    return pd.DataFrame(rows, columns=columns)
 
 
 if __name__ == "__main__":
@@ -121,17 +126,24 @@ if __name__ == "__main__":
     beauty_data_predictions = pd.read_csv('predictions/beauty_data_info_val_prediction_competition.csv',
                                           encoding='utf8')
 
-    mobile_profile = pd.read_json('data/mobile_profile_train.json', typ='series')
-
     # Create the individual submission dataframes
     mobile_submission_df = create_mobile_df(
-        mobile_profile,
+        pd.read_json('data/mobile_profile_train.json', typ='series'),
         mobile_data_predictions,
         get_features(mobile_data_predictions)
     )
 
-    fashion_submission_df = create_submission_df(fashion_data_predictions, get_features(fashion_data_predictions))
-    beauty_submission_df = create_submission_df(beauty_data_predictions, get_features(beauty_data_predictions))
+    fashion_submission_df = create_fashion_submission_df(
+        pd.read_json('data/fashion_profile_train.json', typ='series'),
+        fashion_data_predictions,
+        get_features(fashion_data_predictions)
+    )
+
+    beauty_submission_df = create_beauty_submission_df(
+        pd.read_json('data/beauty_profile_train.json', typ='series'),
+        beauty_data_predictions,
+        get_features(beauty_data_predictions)
+    )
 
     # Combine the submission dataframes into one
     submission_df = pd.concat([mobile_submission_df, fashion_submission_df, beauty_submission_df])
