@@ -1,6 +1,6 @@
-import random
-
 import pandas as pd
+from features import category_json, category_feature_columns
+
 
 android = ['samsung', 'xiaomi', 'oppo', 'google', 'android', ]
 iOS = ['iphone', 'apple']
@@ -18,6 +18,18 @@ def get_features(data):
     return list(features)
 
 
+def df_text_to_class(df, category):
+    """This function convert the entire numeric dataframe from text into class dataframe"""
+
+    map_json = category_json[category]
+    column_map = {}
+    for column in category_feature_columns[category]:
+        column_map[column] = {k: v for k, v in map_json[column].items()}
+        df.loc[:, column] = df[column].map(column_map[column])
+
+    return df
+
+
 def create_mobile_df(mobile_profile, predictions, features):
     columns = ['id', 'tagging']
     rows = []
@@ -27,8 +39,8 @@ def create_mobile_df(mobile_profile, predictions, features):
             id_label = str(data['itemid']) + "_" + feature
             title = str(data['title'])
 
-            prediction1 = data[feature][1]
-            prediction2 = data[feature][4]
+            prediction1 = data[feature]
+            prediction2 = data[feature]
 
             if feature == 'Operating System':
                 if any(os in title for os in android):
@@ -55,7 +67,6 @@ def create_mobile_df(mobile_profile, predictions, features):
                 if any(keyword in title for keyword in iOS):
                     prediction1 = mobile_profile['Brand']['apple']
                     # print('Brand', 'apple', prediction1)
-                prediction2 = random.randrange(len(mobile_profile['Brand']))
 
             if feature == 'Color Family':
                 title = title.replace('biru', 'blue')
@@ -108,8 +119,8 @@ def create_fashion_submission_df(profile, predictions, features):
             id_label = str(data['itemid']) + "_" + feature
             title = str(data['title'])
 
-            prediction1 = data[feature][1]
-            prediction2 = data[feature][4]
+            prediction1 = data[feature]
+            prediction2 = data[feature]
 
             for fashion_feature in fashion_features:
                 if feature == fashion_feature:
@@ -133,8 +144,8 @@ def create_beauty_submission_df(profile, predictions, features):
             id_label = str(data['itemid']) + "_" + feature
             title = str(data['title'])
 
-            prediction1 = data[feature][1]
-            prediction2 = data[feature][4]
+            prediction1 = data[feature]
+            prediction2 = data[feature]
 
             for beauty_feature in beauty_features:
                 if feature == beauty_feature:
@@ -179,36 +190,47 @@ def create_beauty_submission_df(profile, predictions, features):
     return pd.DataFrame(rows, columns=columns)
 
 
+######################################################################
+
 if __name__ == "__main__":
     # Read the saved prediction files
-    mobile_data_predictions = pd.read_csv('predictions/mobile_data_info_val_prediction_competition.csv',
-                                          encoding='utf8')
-    fashion_data_predictions = pd.read_csv('predictions/fashion_data_info_val_prediction_competition.csv',
-                                           encoding='utf8')
-    beauty_data_predictions = pd.read_csv('predictions/beauty_data_info_val_prediction_competition.csv',
-                                          encoding='utf8')
+    mobile_data_predictions = pd.read_csv(
+        'predictions/mobile_data_info_val_prediction_competition.csv', encoding='utf8')
+    fashion_data_predictions = pd.read_csv(
+        'predictions/fashion_data_info_val_prediction_competition.csv', encoding='utf8')
+    beauty_data_predictions = pd.read_csv(
+        'predictions/beauty_data_info_val_prediction_competition.csv', encoding='utf8')
+
+    # Convert from text to classes (numbers)
+    mobile_data_predictions_classes = df_text_to_class(
+        mobile_data_predictions, "mobile")
+    fashion_data_predictions_classes = df_text_to_class(
+        fashion_data_predictions, "fashion")
+    beauty_data_predictions_classes = df_text_to_class(
+        beauty_data_predictions, "beauty")
 
     # Create the individual submission dataframes
     mobile_submission_df = create_mobile_df(
         pd.read_json('data/mobile_profile_train.json', typ='series'),
         mobile_data_predictions,
-        get_features(mobile_data_predictions)
+        get_features(mobile_data_predictions_classes)
     )
 
     fashion_submission_df = create_fashion_submission_df(
         pd.read_json('data/fashion_profile_train.json', typ='series'),
         fashion_data_predictions,
-        get_features(fashion_data_predictions)
+        get_features(fashion_data_predictions_classes)
     )
 
     beauty_submission_df = create_beauty_submission_df(
         pd.read_json('data/beauty_profile_train.json', typ='series'),
         beauty_data_predictions,
-        get_features(beauty_data_predictions)
+        get_features(beauty_data_predictions_classes)
     )
 
     # Combine the submission dataframes into one
-    submission_df = pd.concat([mobile_submission_df, fashion_submission_df, beauty_submission_df])
-    submission_df.to_csv("predictions/data_info_val_submission.csv", index=False)
-    # mobile_submission_df.to_csv("predictions/data_info_val_submission.csv", index=False)
+    submission_df = pd.concat(
+        [mobile_submission_df, fashion_submission_df, beauty_submission_df])
+    submission_df.to_csv(
+        "predictions/data_info_val_submission.csv", index=False)
     print("Submission file created")
