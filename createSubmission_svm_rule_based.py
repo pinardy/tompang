@@ -2,10 +2,13 @@ import pandas as pd
 from features import category_json, category_feature_columns
 
 
-android = ['samsung', 'xiaomi', 'oppo', 'google', 'android', ]
-iOS = ['iphone', 'apple']
+android = ['samsung', 'xiaomi', 'oppo', 'google', 'android', 'htc', 'wiko']
+iOS = ['iphone', 'apple', 'ios']
 nokia = ['nokia']
 blackberry = ['blackberry']
+windows = ['lumia', 'windows']
+samsungOS = ['tizen', 'samsung z']
+symbian = ['symbian', 'nokia n', 'nokia c']
 
 mobile_features = ['Memory RAM', 'Network Connections', 'Storage Capacity', 'Phone Model', 'Camera',
                    'Phone Screen Size']
@@ -43,17 +46,25 @@ def create_mobile_df(mobile_profile, predictions, features):
             prediction2 = data[feature]
 
             if feature == 'Operating System':
-                if any(os in title for os in android):
-                    prediction1 = mobile_profile['Operating System']['android']
-                    prediction2 = mobile_profile['Operating System']['samsung os']
-                elif any(os in title for os in iOS):
+                if any(os in title for os in iOS):
                     prediction1 = mobile_profile['Operating System']['ios']
+                elif any(os in title for os in windows):
+                    prediction1 = mobile_profile['Operating System']['windows']
                     prediction2 = mobile_profile['Operating System']['android']
-                elif any(os in title for os in nokia):
+                elif any(os in title for os in symbian):
+                    prediction2 = mobile_profile['Operating System']['symbian']
+                    prediction1 = mobile_profile['Operating System']['nokia os']
+                elif any(os in title for os in samsungOS):
+                    prediction2 = mobile_profile['Operating System']['samsung os']
                     prediction1 = mobile_profile['Operating System']['android']
-                    prediction2 = mobile_profile['Operating System']['windows']
+                elif any(os in title for os in android):
+                    prediction1 = mobile_profile['Operating System']['android']
+                elif any(os in title for os in nokia):
+                    prediction1 = mobile_profile['Operating System']['nokia os']
+                    prediction2 = mobile_profile['Operating System']['symbian']
                 elif any(os in title for os in blackberry):
                     prediction1 = mobile_profile['Operating System']['blackberry os']
+                    prediction2 = mobile_profile['Operating System']['android']
                 else:
                     prediction2 = prediction1
                     prediction1 = mobile_profile['Operating System']['android']
@@ -104,6 +115,12 @@ def create_mobile_df(mobile_profile, predictions, features):
                             prediction1 = mobile_profile[mobile_feature][keyword]
                             break
 
+            if prediction2 == prediction1:
+                if prediction2 == 0:
+                    prediction2 += 1
+                else:
+                    prediction2 -= 1
+
             row = [id_label, str(prediction1) + ' ' + str(prediction2)]
             rows.append(row)
 
@@ -128,6 +145,12 @@ def create_fashion_submission_df(profile, predictions, features):
                         if keyword in title:
                             prediction1 = profile[fashion_feature][keyword]
                             break
+
+            if prediction2 == prediction1:
+                if prediction2 == 0:
+                    prediction2 += 1
+                else:
+                    prediction2 -= 1
 
             row = [id_label, str(prediction1) + ' ' + str(prediction2)]
             rows.append(row)
@@ -183,6 +206,12 @@ def create_beauty_submission_df(profile, predictions, features):
                         prediction1 = profile['Colour_group'][color]
                         # print('color beauty', color)
                         break
+
+            if prediction2 == prediction1:
+                if prediction2 == 0:
+                    prediction2 += 1
+                else:
+                    prediction2 -= 1
 
             row = [id_label, str(prediction1) + ' ' + str(prediction2)]
             rows.append(row)
